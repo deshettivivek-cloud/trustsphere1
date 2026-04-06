@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom global styles */
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: #0f172a; /* dark background */
+  color: #ffffff;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Reusable classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.btn {
+  background-color: #3b82f6;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: 0.3s;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #2563eb;
+}
+
+.input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background-color: #1e293b;
+  color: white;
+  width: 100%;
+}

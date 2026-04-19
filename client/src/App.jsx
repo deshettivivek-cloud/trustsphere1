@@ -1,42 +1,67 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { Toaster } from 'react-hot-toast'
-import { AuthProvider } from './context/AuthContext'
-import Navbar from './components/navbar'
-import ProtectedRoute from './components/ProtectedRoute'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from "./components/navbar";
+import Footer from "./components/Footer";
 
-const ComingSoon = ({ page }) => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <h2 className="text-2xl font-display font-bold text-slate-900 mb-2">{page}</h2>
-      <p className="text-slate-500">Coming in next steps...</p>
-    </div>
-  </div>
-)
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Search from "./pages/Search";
+import CreateProfile from "./pages/CreateProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/search" element={<ComingSoon page="Search Workers" />} />
-          <Route path="/worker/:id" element={<ComingSoon page="Worker Profile" />} />
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/worker-profile" element={<ProtectedRoute><ComingSoon page="Edit Worker Profile" /></ProtectedRoute>} />
-          <Route path="/my-bookings" element={<ProtectedRoute><ComingSoon page="My Bookings" /></ProtectedRoute>} />
-          <Route path="/my-jobs" element={<ProtectedRoute><ComingSoon page="Job Requests" /></ProtectedRoute>} />
-        </Routes>
-      </Router>
-    </AuthProvider>
-  )
+    <BrowserRouter>
+      <AuthProvider>
+        <div className="flex flex-col min-h-screen">
+          <Navbar />
+
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/create-profile"
+                element={
+                  <ProtectedRoute>
+                    <CreateProfile />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/search"
+                element={
+                  <ProtectedRoute>
+                    <Search />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+
+          <Footer />
+        </div>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;

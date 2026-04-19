@@ -1,4 +1,10 @@
 const express = require('express')
 const router = express.Router()
-router.get('/', (req, res) => res.json({ message: 'Bookings route working' }))
+const { protect } = require('../middleware/authMiddleware')
+const { createBooking, getMyBookings, updateBookingStatus } = require('../controllers/bookingController')
+
+router.post('/', protect, createBooking)
+router.get('/', protect, getMyBookings)
+router.patch('/:id/status', protect, updateBookingStatus)
+
 module.exports = router

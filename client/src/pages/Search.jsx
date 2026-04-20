@@ -1,9 +1,11 @@
 // src/pages/Search.jsx
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import MapplsMap from '../components/MapplsMap'
+import PlaceAutocomplete from '../components/PlaceAutocomplete'
 import {
   Search as SearchIcon, MapPin, Phone, Briefcase,
   X, Clock, CalendarDays, CheckCircle, AlertCircle,
@@ -55,7 +57,6 @@ export default function Search() {
     setError('')
 
     try {
-      // Build query params for server API
       const params = new URLSearchParams()
       if (serviceType && serviceType !== 'All Services') {
         params.set('service', serviceType.toLowerCase())
@@ -64,7 +65,6 @@ export default function Search() {
         params.set('city', area.trim())
       }
 
-      // Call server API (uses service role key — bypasses RLS, returns names)
       const res = await fetch(`http://localhost:3001/api/workers?${params.toString()}`)
       const json = await res.json()
 
@@ -72,7 +72,6 @@ export default function Search() {
 
       setWorkers(json.data || [])
 
-      // Update URL params
       const urlParams = {}
       if (serviceType && serviceType !== 'All Services') urlParams.service = serviceType.toLowerCase()
       if (area.trim()) urlParams.area = area.trim()
@@ -108,8 +107,8 @@ export default function Search() {
     setCustomerAddress('')
   }
 
-  // Reverse geocode helper
-  const reverseGeocode = async (lat, lng) => {
+  // Reverse geocode (Nominatim — free)
+  const reverseGeocode = useCallback(async (lat, lng) => {
     try {
       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
       const data = await res.json()
@@ -117,17 +116,17 @@ export default function Search() {
     } catch {
       return `${lat.toFixed(5)}, ${lng.toFixed(5)}`
     }
-  }
+  }, [])
 
   // Set location from coords
-  const applyLocation = async (lat, lng) => {
+  const applyLocation = useCallback(async (lat, lng) => {
     setCustomerLat(lat)
     setCustomerLng(lng)
     const addr = await reverseGeocode(lat, lng)
     setCustomerAddress(addr)
     setLocLoading(false)
     setBookingError('')
-  }
+  }, [reverseGeocode])
 
   // Get customer's current GPS location
   const shareLocation = () => {
@@ -138,15 +137,12 @@ export default function Search() {
     setLocLoading(true)
     setBookingError('')
 
-    // Try high accuracy first (GPS hardware)
     navigator.geolocation.getCurrentPosition(
       (pos) => applyLocation(pos.coords.latitude, pos.coords.longitude),
       () => {
-        // Retry with low accuracy (WiFi/network-based — works on desktops)
         navigator.geolocation.getCurrentPosition(
           (pos) => applyLocation(pos.coords.latitude, pos.coords.longitude),
           async () => {
-            // Final fallback: IP-based geolocation
             try {
               const res = await fetch('https://ipapi.co/json/')
               const data = await res.json()
@@ -165,6 +161,28 @@ export default function Search() {
       },
       { enableHighAccuracy: true, timeout: 15000 }
     )
+  }
+
+  // Handle marker move on map
+  const handleMarkerMove = useCallback(async ({ lat, lng }) => {
+    setCustomerLat(lat)
+    setCustomerLng(lng)
+    const addr = await reverseGeocode(lat, lng)
+    setCustomerAddress(addr)
+  }, [reverseGeocode])
+
+  // Handle place selection from autocomplete (in booking modal)
+  const handleAddressSelect = (place) => {
+    setCustomerAddress(place.display_name)
+    if (place.lat && place.lng) {
+      setCustomerLat(place.lat)
+      setCustomerLng(place.lng)
+    }
+  }
+
+  // Handle area selection from autocomplete (search bar)
+  const handleAreaSelect = (place) => {
+    setArea(place.city || place.short_name || place.display_name?.split(',')[0] || '')
   }
 
   // Submit booking
@@ -194,17 +212,15 @@ export default function Search() {
         })
 
       if (insertErr) throw insertErr
-
       setBookingSuccess(true)
     } catch (err) {
       console.error('Booking error:', err)
-      setBookingError(err.message || 'Failed to create booking. The bookings table may not exist yet.')
+      setBookingError(err.message || 'Failed to create booking.')
     } finally {
       setBookingLoading(false)
     }
   }
 
-  // Get tomorrow's date as min date
   const getMinDate = () => {
     const d = new Date()
     d.setDate(d.getDate() + 1)
@@ -221,16 +237,16 @@ export default function Search() {
           <p className="text-slate-400 text-sm">Search trusted professionals in your area</p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar with Place Autocomplete */}
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="flex-1 relative">
-            <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input
-              type="text"
+            <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 z-10" />
+            <PlaceAutocomplete
               value={area}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder="Enter city or area..."
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-800 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-green-500/50 transition text-sm"
+              onChange={setArea}
+              onSelect={handleAreaSelect}
+              placeholder="Search city or area..."
+              className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-800 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-green-500/50 transition text-sm"
             />
           </div>
           <button
@@ -298,24 +314,20 @@ export default function Search() {
                   className="bg-slate-800/60 border border-white/5 rounded-2xl p-5 hover:border-green-500/20 transition-all"
                 >
                   <div className="flex items-start gap-4">
-                    {/* Avatar */}
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
                       {worker.full_name?.charAt(0)?.toUpperCase() || '?'}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <h3 className="text-white font-semibold truncate">{worker.full_name}</h3>
-
                       <div className="flex items-center gap-1.5 mt-1">
                         <Briefcase size={12} className="text-green-400" />
                         <span className="text-green-400 text-xs font-medium capitalize">{worker.service_type || 'General'}</span>
                       </div>
-
                       <div className="flex items-center gap-1.5 mt-1">
                         <MapPin size={12} className="text-slate-500" />
                         <span className="text-slate-400 text-xs">{worker.city || worker.location || 'Not specified'}</span>
                       </div>
-
                       {worker.phone && (
                         <div className="flex items-center gap-1.5 mt-1">
                           <Phone size={12} className="text-slate-500" />
@@ -325,7 +337,6 @@ export default function Search() {
                     </div>
                   </div>
 
-                  {/* Book Now button */}
                   <button
                     type="button"
                     onClick={() => openBooking(worker)}
@@ -362,7 +373,6 @@ export default function Search() {
             </div>
 
             {bookingSuccess ? (
-              /* Success state */
               <div className="px-6 py-10 text-center">
                 <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle size={28} className="text-green-400" />
@@ -383,8 +393,7 @@ export default function Search() {
                 </button>
               </div>
             ) : (
-              /* Booking form */
-              <div className="px-6 py-5 space-y-5">
+              <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
 
                 {/* Worker info mini-card */}
                 <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl">
@@ -445,20 +454,21 @@ export default function Search() {
 
                   {customerLat && customerLng ? (
                     <div className="space-y-2">
-                      {/* Mini map */}
-                      <div className="rounded-xl overflow-hidden border border-white/10 h-36">
-                        <iframe
-                          title="Your location"
-                          width="100%"
-                          height="100%"
-                          style={{ border: 0 }}
-                          loading="lazy"
-                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${customerLng - 0.005},${customerLat - 0.003},${customerLng + 0.005},${customerLat + 0.003}&layer=mapnik&marker=${customerLat},${customerLng}`}
+                      {/* Mappls Map */}
+                      <div className="rounded-xl overflow-hidden border border-white/10">
+                        <MapplsMap
+                          center={{ lat: customerLat, lng: customerLng }}
+                          markerPosition={{ lat: customerLat, lng: customerLng }}
+                          zoom={15}
+                          draggable
+                          onMarkerDragEnd={handleMarkerMove}
+                          style={{ width: '100%', height: '160px', borderRadius: '12px' }}
                         />
                       </div>
                       <p className="text-slate-400 text-xs truncate" title={customerAddress}>
                         📍 {customerAddress}
                       </p>
+                      <p className="text-slate-600 text-[10px]">Drag the marker or click the map to adjust your location</p>
                       <button
                         type="button"
                         onClick={() => { setCustomerLat(null); setCustomerLng(null); setCustomerAddress('') }}
@@ -476,18 +486,19 @@ export default function Search() {
                         className="w-full py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-xl text-xs font-medium transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                       >
                         {locLoading ? (
-                          <><Loader2 size={14} className="animate-spin" /> Getting location...</>
+                          <><Loader2 size={14} className="animate-spin" /> Detecting your location...</>
                         ) : (
-                          <><Navigation size={14} /> Share My Location (GPS)</>
+                          <><Navigation size={14} /> 📍 Auto-Detect My Location (GPS)</>
                         )}
                       </button>
-                      <div className="text-center text-slate-600 text-[10px]">or enter manually</div>
-                      <input
-                        type="text"
+                      <div className="text-center text-slate-600 text-[10px]">or search your address below</div>
+                      {/* Address autocomplete */}
+                      <PlaceAutocomplete
                         value={customerAddress}
-                        onChange={(e) => setCustomerAddress(e.target.value)}
-                        placeholder="Enter your address..."
-                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition text-xs"
+                        onChange={setCustomerAddress}
+                        onSelect={handleAddressSelect}
+                        placeholder="Search your address or landmark..."
+                        className="w-full px-4 py-2.5 rounded-xl bg-slate-800 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 transition text-xs pr-10"
                       />
                     </div>
                   )}

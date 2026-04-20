@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import MapplsMap from '../components/MapplsMap'
 import {
   User, Briefcase, Calendar, Star, Search,
   AlertCircle, Plus, Shield, LogOut, ChevronRight,
@@ -397,18 +398,31 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Navigate button for workers */}
-                  {isWorker && (b.customer_lat || b.customer_address) && (
+                  {/* Embedded Mappls Map showing customer location */}
+                  {isWorker && b.customer_lat && b.customer_lng && (
+                    <div className="mt-2 rounded-lg overflow-hidden border border-white/10">
+                      <MapplsMap
+                        center={{ lat: Number(b.customer_lat), lng: Number(b.customer_lng) }}
+                        markerPosition={{ lat: Number(b.customer_lat), lng: Number(b.customer_lng) }}
+                        zoom={14}
+                        interactive={false}
+                        style={{ width: '100%', height: '120px', borderRadius: '8px' }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Navigate button for workers — only after accepting */}
+                  {isWorker && b.status === 'confirmed' && (b.customer_lat || b.customer_address) && (
                     <a
                       href={b.customer_lat && b.customer_lng
-                        ? `https://www.google.com/maps/dir/?api=1&destination=${b.customer_lat},${b.customer_lng}`
-                        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(b.customer_address)}`
+                        ? `https://mappls.com/navigation?places=${b.customer_lat},${b.customer_lng},Customer&isNav=true&mode=driving`
+                        : `https://mappls.com/navigation?places=${encodeURIComponent(b.customer_address)}&isNav=true&mode=driving`
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 w-full py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5"
+                      className="mt-2 w-full py-2.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                     >
-                      <Navigation size={13} /> Navigate to Customer
+                      <Navigation size={13} /> 🗺️ Navigate to Customer (MapmyIndia)
                     </a>
                   )}
 

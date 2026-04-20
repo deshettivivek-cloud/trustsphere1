@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/navbar";
 import Footer from "./components/Footer";
+import GoogleMapsProvider from "./components/MapplsProvider";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -17,6 +18,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <GoogleMapsProvider>
         <div className="flex flex-col min-h-screen">
           <Navbar />
 
@@ -59,6 +61,7 @@ function App() {
 
           <Footer />
         </div>
+        </GoogleMapsProvider>
       </AuthProvider>
     </BrowserRouter>
   );

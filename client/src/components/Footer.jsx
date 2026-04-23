@@ -16,7 +16,7 @@ const Footer = () => {
                 <Shield size={16} className="text-white" />
               </div>
               <span className="text-lg font-bold text-white tracking-tight">
-                TrustSphere
+                InLocFix
               </span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
@@ -39,7 +39,7 @@ const Footer = () => {
                 <Globe size={15} />
               </a>
               <a
-                href="mailto:support@trustsphere.com"
+                href="mailto:support@inlocfix.com"
                 className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-200"
                 aria-label="Email"
               >
@@ -100,7 +100,7 @@ const Footer = () => {
         {/* Bottom bar */}
         <div className="border-t border-white/5 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-500">
-            © {currentYear} TrustSphere. All rights reserved.
+            © {currentYear} InLocFix. All rights reserved.
           </p>
           <p className="text-xs text-slate-500">
             Made with 💚 in India

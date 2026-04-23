@@ -72,12 +72,36 @@ export const AuthProvider = ({ children }) => {
 
         if (currentUser) {
           await fetchProfile(currentUser.id);
+        } else {
+          // Fallback: check if user logged in via phone OTP
+          const otpUser = localStorage.getItem("trustsphere_otp_user");
+          if (otpUser) {
+            try {
+              const parsed = JSON.parse(otpUser);
+              setUser({ id: parsed.id, email: parsed.email });
+              setProfile(parsed);
+            } catch (_) {
+              localStorage.removeItem("trustsphere_otp_user");
+            }
+          }
         }
       } catch (err) {
         console.error("[AuthContext] getSession error:", err.message);
         if (mounted) {
-          setUser(null);
-          setProfile(null);
+          // Fallback: check OTP user even on error
+          const otpUser = localStorage.getItem("trustsphere_otp_user");
+          if (otpUser) {
+            try {
+              const parsed = JSON.parse(otpUser);
+              setUser({ id: parsed.id, email: parsed.email });
+              setProfile(parsed);
+            } catch (_) {
+              localStorage.removeItem("trustsphere_otp_user");
+            }
+          } else {
+            setUser(null);
+            setProfile(null);
+          }
         }
       } finally {
         if (mounted) setLoading(false);

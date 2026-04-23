@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { supabase } from "../lib/supabase";
 import { useState, useEffect, useRef } from "react";
 import {
@@ -14,10 +15,13 @@ import {
   ChevronDown,
   User,
   Shield,
+  Layers,
+  ShoppingCart,
 } from "lucide-react";
 
 const Navbar = () => {
   const { user, profile } = useAuth();
+  const { cartCount } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
@@ -75,6 +79,7 @@ const Navbar = () => {
 
   const NAV_LINKS = [
     { to: "/", label: "Home", icon: Home },
+    { to: "/services", label: "Services", icon: Layers },
     { to: "/search", label: "Search", icon: Search },
     ...(user
       ? [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }]
@@ -112,7 +117,7 @@ const Navbar = () => {
                 <Shield size={16} className="text-white" />
               </div>
               <span className="text-lg font-bold text-white tracking-tight">
-                TrustSphere
+                InLocFix
               </span>
             </Link>
 
@@ -136,6 +141,21 @@ const Navbar = () => {
                   )}
                 </Link>
               ))}
+            </div>
+
+            {/* Cart Icon */}
+            <div className="hidden md:flex items-center">
+              <Link
+                to="/cart"
+                className="relative p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition-all duration-200 mr-2"
+              >
+                <ShoppingCart size={18} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 min-w-[18px] bg-green-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-badge-pop">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
             </div>
 
             {/* Right Side — Auth */}

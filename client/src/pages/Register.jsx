@@ -167,7 +167,7 @@ function Register() {
         {/* Header */}
         <div className="mb-6 text-center">
           <h2 className="text-3xl font-bold text-white">Create Account</h2>
-          <p className="text-gray-400 mt-1 text-sm">Join TrustSphere today</p>
+          <p className="text-gray-400 mt-1 text-sm">Join InLocFix today</p>
         </div>
 
         {/* Role Toggle */}

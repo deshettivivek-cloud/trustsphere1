@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import MapplsMap from '../components/MapplsMap'
 import {
   User, Briefcase, Calendar, Star, Search,
   AlertCircle, Plus, Shield, LogOut, ChevronRight,
-  Clock, MapPin, Phone, Mail, CheckCircle, XCircle, Navigation
+  Clock, MapPin, Phone, Mail, CheckCircle, XCircle, Navigation, ShieldCheck, X, Loader2
 } from 'lucide-react'
+
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -25,6 +26,15 @@ export default function Dashboard() {
   // Bookings state
   const [bookings, setBookings] = useState([])
   const [bookingsLoading, setBookingsLoading] = useState(false)
+
+  // Worker verification state
+  const [verifyModal, setVerifyModal] = useState({ open: false, bookingId: null })
+  const [verifyOtp, setVerifyOtp] = useState('')
+  const [verifySending, setVerifySending] = useState(false)
+  const [verifyChecking, setVerifyChecking] = useState(false)
+  const [verifyOtpSent, setVerifyOtpSent] = useState(false)
+  const [verifyError, setVerifyError] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
 
   // Direct profile fetch with timeout protection
   useEffect(() => {
@@ -139,6 +149,58 @@ export default function Dashboard() {
     }
   }
 
+  // Worker verification: send OTP
+  const handleSendVerifyOtp = async (bookingId) => {
+    setVerifySending(true)
+    setVerifyError('')
+    try {
+      const res = await fetch(`${API}/api/otp/worker-verify/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message)
+      setVerifyOtpSent(true)
+    } catch (err) {
+      setVerifyError(err.message)
+    } finally {
+      setVerifySending(false)
+    }
+  }
+
+  // Worker verification: confirm OTP
+  const handleConfirmVerifyOtp = async () => {
+    setVerifyChecking(true)
+    setVerifyError('')
+    try {
+      const res = await fetch(`${API}/api/otp/worker-verify/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: verifyModal.bookingId, otp: verifyOtp }),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message)
+      setBookings(prev => prev.map(b => b.id === verifyModal.bookingId ? { ...b, status: 'verified' } : b))
+      setVerifyModal({ open: false, bookingId: null })
+      setVerifyOtp('')
+      setVerifyOtpSent(false)
+      setShowSuccess(true)
+      setTimeout(() => setShowSuccess(false), 3000)
+    } catch (err) {
+      setVerifyError(err.message)
+    } finally {
+      setVerifyChecking(false)
+    }
+  }
+
+  const openVerifyModal = (bookingId) => {
+    setVerifyModal({ open: true, bookingId })
+    setVerifyOtp('')
+    setVerifyOtpSent(false)
+    setVerifyError('')
+  }
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0b1120]">
@@ -193,6 +255,7 @@ export default function Dashboard() {
       ]
 
   const statusColor = (s) => {
+    if (s === 'verified') return 'bg-emerald-500/20 text-emerald-400'
     if (s === 'confirmed') return 'bg-green-500/20 text-green-400'
     if (s === 'cancelled') return 'bg-red-500/20 text-red-400'
     return 'bg-yellow-500/20 text-yellow-400'
@@ -398,31 +461,18 @@ export default function Dashboard() {
                     </div>
                   )}
 
-                  {/* Embedded Mappls Map showing customer location */}
-                  {isWorker && b.customer_lat && b.customer_lng && (
-                    <div className="mt-2 rounded-lg overflow-hidden border border-white/10">
-                      <MapplsMap
-                        center={{ lat: Number(b.customer_lat), lng: Number(b.customer_lng) }}
-                        markerPosition={{ lat: Number(b.customer_lat), lng: Number(b.customer_lng) }}
-                        zoom={14}
-                        interactive={false}
-                        style={{ width: '100%', height: '120px', borderRadius: '8px' }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Navigate button for workers — only after accepting */}
-                  {isWorker && b.status === 'confirmed' && (b.customer_lat || b.customer_address) && (
+                  {/* Navigate button for workers */}
+                  {isWorker && (b.customer_lat || b.customer_address) && (
                     <a
                       href={b.customer_lat && b.customer_lng
-                        ? `https://mappls.com/navigation?places=${b.customer_lat},${b.customer_lng},Customer&isNav=true&mode=driving`
-                        : `https://mappls.com/navigation?places=${encodeURIComponent(b.customer_address)}&isNav=true&mode=driving`
+                        ? `https://www.google.com/maps/dir/?api=1&destination=${b.customer_lat},${b.customer_lng}`
+                        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(b.customer_address)}`
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-2 w-full py-2.5 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-400 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                      className="mt-2 w-full py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5"
                     >
-                      <Navigation size={13} /> 🗺️ Navigate to Customer (MapmyIndia)
+                      <Navigation size={13} /> Navigate to Customer
                     </a>
                   )}
 
@@ -437,6 +487,21 @@ export default function Dashboard() {
                         className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-lg text-xs font-medium transition cursor-pointer flex items-center justify-center gap-1.5">
                         <XCircle size={13} /> Decline
                       </button>
+                    </div>
+                  )}
+
+                  {/* Customer: Verify Worker button */}
+                  {!isWorker && b.status === 'confirmed' && (
+                    <button type="button" onClick={() => openVerifyModal(b.id)}
+                      className="mt-3 w-full py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5">
+                      <ShieldCheck size={14} /> Verify Worker
+                    </button>
+                  )}
+
+                  {/* Verified badge */}
+                  {b.status === 'verified' && (
+                    <div className="mt-3 w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5">
+                      <ShieldCheck size={14} /> Worker Verified ✓
                     </div>
                   )}
                 </div>
@@ -500,6 +565,57 @@ export default function Dashboard() {
         )}
 
       </div>
+
+      {/* ===== OTP Verification Modal ===== */}
+      {verifyModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4" style={{animation:'fadeIn .2s ease'}}>
+          <div className="bg-slate-800 border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl" style={{animation:'scaleIn .25s ease'}}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-bold text-lg flex items-center gap-2"><ShieldCheck size={18} className="text-emerald-400" /> Verify Worker</h3>
+              <button type="button" onClick={() => setVerifyModal({ open: false, bookingId: null })} className="text-slate-400 hover:text-white transition cursor-pointer"><X size={18} /></button>
+            </div>
+            <p className="text-slate-400 text-sm mb-5">An OTP will be sent to the worker's phone. Ask the worker to share the code with you.</p>
+            {verifyError && <p className="text-red-400 text-xs mb-3 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{verifyError}</p>}
+            {!verifyOtpSent ? (
+              <button type="button" onClick={() => handleSendVerifyOtp(verifyModal.bookingId)} disabled={verifySending}
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                {verifySending ? <><Loader2 size={15} className="animate-spin" /> Sending...</> : <>Send OTP to Worker</>}
+              </button>
+            ) : (
+              <div>
+                <label className="text-slate-400 text-xs mb-1.5 block">Enter the 6-digit OTP from the worker</label>
+                <input type="text" maxLength={6} value={verifyOtp} onChange={e => setVerifyOtp(e.target.value.replace(/\D/g,''))}
+                  className="w-full px-4 py-3 bg-slate-700/50 border border-white/10 rounded-xl text-white text-center text-xl tracking-[0.5em] font-mono focus:outline-none focus:border-emerald-500/50 mb-4" placeholder="• • • • • •" />
+                <button type="button" onClick={handleConfirmVerifyOtp} disabled={verifyOtp.length < 6 || verifyChecking}
+                  className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                  {verifyChecking ? <><Loader2 size={15} className="animate-spin" /> Verifying...</> : <>Verify</>}
+                </button>
+                <button type="button" onClick={() => { setVerifyOtpSent(false); setVerifyError('') }} className="w-full mt-2 py-2 text-slate-400 hover:text-white text-xs transition cursor-pointer">Resend OTP</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Success Popup ===== */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" style={{animation:'fadeIn .2s ease'}}>
+          <div className="bg-slate-800 border border-emerald-500/30 rounded-2xl p-8 text-center shadow-2xl max-w-xs" style={{animation:'bounceIn .4s ease'}}>
+            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border-2 border-emerald-500/40 flex items-center justify-center mx-auto mb-4" style={{animation:'pulseGlow 1.5s infinite'}}>
+              <ShieldCheck size={32} className="text-emerald-400" />
+            </div>
+            <h3 className="text-white font-bold text-xl mb-1">Worker Verified!</h3>
+            <p className="text-slate-400 text-sm">The worker has been verified successfully.</p>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.9) } to { opacity: 1; transform: scale(1) } }
+        @keyframes bounceIn { 0% { opacity:0; transform:scale(0.5) } 60% { transform:scale(1.1) } 100% { opacity:1; transform:scale(1) } }
+        @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.3) } 50% { box-shadow: 0 0 20px 8px rgba(16,185,129,0.15) } }
+      `}</style>
     </div>
   )
 }

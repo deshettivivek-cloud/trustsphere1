@@ -5,8 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
-import PlaceAutocomplete from '../components/PlaceAutocomplete'
-import { User, Briefcase, MapPin, ChevronRight, LogOut, Navigation, Loader2 } from 'lucide-react'
+import { User, Briefcase, MapPin, ChevronRight, LogOut } from 'lucide-react'
 
 const SERVICE_TYPES = [
   'Electrician', 'Plumber', 'AC Repair', 'Carpenter',
@@ -27,7 +26,6 @@ export default function CreateProfile() {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
-  const [detectingLocation, setDetectingLocation] = useState(false)
 
   // Pre-fill from existing profile row OR auth metadata
   useEffect(() => {
@@ -97,67 +95,6 @@ export default function CreateProfile() {
     setForm(prev => ({ ...prev, [name]: value }))
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
     if (submitError) setSubmitError('')
-  }
-
-  // --- AUTO-DETECT LOCATION using GPS + Nominatim reverse geocoding ---
-  const detectLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by your browser.')
-      return
-    }
-    setDetectingLocation(true)
-
-    const extractCity = async (lat, lng) => {
-      try {
-        // Use Nominatim (OpenStreetMap) for reverse geocoding — free, no API key
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
-        )
-        const data = await res.json()
-        // Extract city from address details
-        const addr = data.address || {}
-        const city = addr.city || addr.town || addr.village || addr.county || addr.state_district || addr.state || ''
-        if (city) {
-          setForm(prev => ({ ...prev, city }))
-          if (errors.city) setErrors(prev => ({ ...prev, city: '' }))
-          toast.success(`📍 Location detected: ${city}`)
-        } else {
-          toast.error('Could not detect city. Please enter manually.')
-        }
-      } catch {
-        toast.error('Geocoding failed. Please enter city manually.')
-      }
-      setDetectingLocation(false)
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => extractCity(pos.coords.latitude, pos.coords.longitude),
-      () => {
-        // Retry with low accuracy
-        navigator.geolocation.getCurrentPosition(
-          (pos) => extractCity(pos.coords.latitude, pos.coords.longitude),
-          async () => {
-            // Fallback: IP-based city detection
-            try {
-              const res = await fetch('https://ipapi.co/json/')
-              const data = await res.json()
-              if (data.city) {
-                setForm(prev => ({ ...prev, city: data.city }))
-                if (errors.city) setErrors(prev => ({ ...prev, city: '' }))
-                toast.success(`📍 Location detected: ${data.city}`)
-              } else {
-                toast.error('Could not detect your city.')
-              }
-            } catch {
-              toast.error('Could not detect location. Please enter manually.')
-            }
-            setDetectingLocation(false)
-          },
-          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-        )
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    )
   }
 
   // --- CREATE PROFILE (onClick, no form tag) ---
@@ -276,7 +213,7 @@ export default function CreateProfile() {
             <User size={24} className="text-green-400" />
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Complete Your Profile</h1>
-          <p className="text-slate-400 text-sm">Fill in your details to get started on TrustSphere</p>
+          <p className="text-slate-400 text-sm">Fill in your details to get started on InLocFix</p>
         </div>
 
         {/* Card — no form tag, onClick handlers */}
@@ -317,41 +254,19 @@ export default function CreateProfile() {
             </div>
           </div>
 
-          {/* City / Area with auto-detect */}
+          {/* City / Area */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1.5">
               <MapPin size={13} className="inline mr-1.5 -mt-0.5" />
               City / Area
             </label>
-
-            {/* Auto-detect location button */}
-            <button
-              type="button"
-              onClick={detectLocation}
-              disabled={detectingLocation}
-              className="w-full mb-2 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-xl text-xs font-medium transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {detectingLocation ? (
-                <><Loader2 size={13} className="animate-spin" /> Detecting your location...</>
-              ) : (
-                <><Navigation size={13} /> 📍 Auto-Detect My Location</>
-              )}
-            </button>
-
-            {/* City input with place suggestions */}
-            <PlaceAutocomplete
+            <input
+              name="city"
+              type="text"
               value={form.city}
-              onChange={(text) => {
-                setForm(prev => ({ ...prev, city: text }))
-                if (errors.city) setErrors(prev => ({ ...prev, city: '' }))
-              }}
-              onSelect={(place) => {
-                const city = place.city || place.short_name || place.display_name?.split(',')[0] || ''
-                setForm(prev => ({ ...prev, city }))
-                if (errors.city) setErrors(prev => ({ ...prev, city: '' }))
-              }}
-              placeholder="Search your city or area..."
-              className={inputClass('city') + ' pr-10'}
+              onChange={handleChange}
+              placeholder="e.g. Hyderabad, Mumbai, Delhi..."
+              className={inputClass('city')}
             />
             {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
           </div>

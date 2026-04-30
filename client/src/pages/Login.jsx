@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, Phone, Mail, ArrowRight } from 'lucide-react'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+import { API_BASE_URL } from '../lib/capacitor'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -83,7 +82,7 @@ export default function Login() {
     setOtpLoading(true)
     setOtpError('')
     try {
-      const res = await fetch(`${API_URL}/api/otp/send`, {
+      const res = await fetch(`${API_BASE_URL}/api/otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone }),
@@ -110,7 +109,7 @@ export default function Login() {
     setOtpLoading(true)
     setOtpError('')
     try {
-      const res = await fetch(`${API_URL}/api/otp/verify`, {
+      const res = await fetch(`${API_BASE_URL}/api/otp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: cleanPhone, otp }),

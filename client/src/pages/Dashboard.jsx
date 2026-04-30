@@ -9,8 +9,7 @@ import {
   AlertCircle, Plus, Shield, LogOut, ChevronRight,
   Clock, MapPin, Phone, Mail, CheckCircle, XCircle, Navigation, ShieldCheck, X, Loader2
 } from 'lucide-react'
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+import { API_BASE_URL } from '../lib/capacitor'
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth()
@@ -154,7 +153,7 @@ export default function Dashboard() {
     setVerifySending(true)
     setVerifyError('')
     try {
-      const res = await fetch(`${API}/api/otp/worker-verify/send`, {
+      const res = await fetch(`${API_BASE_URL}/api/otp/worker-verify/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId }),
@@ -174,7 +173,7 @@ export default function Dashboard() {
     setVerifyChecking(true)
     setVerifyError('')
     try {
-      const res = await fetch(`${API}/api/otp/worker-verify/confirm`, {
+      const res = await fetch(`${API_BASE_URL}/api/otp/worker-verify/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId: verifyModal.bookingId, otp: verifyOtp }),

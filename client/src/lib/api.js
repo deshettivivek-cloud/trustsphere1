@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { supabase } from './supabase'
+import { API_BASE_URL } from './capacitor'
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: `${API_BASE_URL}/api`,
 })
 
 api.interceptors.request.use(async (config) => {

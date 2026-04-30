@@ -22,6 +22,31 @@ body {
   background-color: #0b1120;
   color: #ffffff;
   line-height: 1.6;
+  /* Mobile: prevent pull-to-refresh & rubber-banding */
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Mobile / Capacitor Safe Area ===== */
+html {
+  /* Account for notches, status bars, and home indicators */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Prevent text-size adjust on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Disable user selection on interactive elements for native feel */
+button, a, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
 }
 
 /* ===== Custom Animations ===== */

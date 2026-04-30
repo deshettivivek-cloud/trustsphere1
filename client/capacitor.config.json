@@ -1,0 +1,21 @@
+{
+  "appId": "com.inlocfix.app",
+  "appName": "InLocFix",
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": ["*"]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0b1120",
+      "showSpinner": true,
+      "spinnerColor": "#22c55e"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0b1120"
+    }
+  }
+}

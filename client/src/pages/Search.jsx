@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { API_BASE_URL } from '../lib/capacitor'
 import {
   Search as SearchIcon, MapPin, Phone, Briefcase,
   X, Clock, CalendarDays, CheckCircle, AlertCircle,
@@ -65,7 +66,7 @@ export default function Search() {
       }
 
       // Call server API (uses service role key — bypasses RLS, returns names)
-      const res = await fetch(`http://localhost:3001/api/workers?${params.toString()}`)
+      const res = await fetch(`${API_BASE_URL}/api/workers?${params.toString()}`)
       const json = await res.json()
 
       if (!json.success) throw new Error(json.message || 'Server error')

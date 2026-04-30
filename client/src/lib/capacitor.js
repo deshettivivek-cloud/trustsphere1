@@ -29,8 +29,11 @@ export const getApiUrl = () => {
     return 'http://localhost:3001'
   }
 
-  // Browser fallback
-  return 'http://localhost:3001'
+  // Browser fallback — use deployed backend in production, localhost in dev
+  if (import.meta.env.DEV) {
+    return 'http://localhost:3001'
+  }
+  return 'https://trustsphere-api.onrender.com'
 }
 
 export const API_BASE_URL = getApiUrl()

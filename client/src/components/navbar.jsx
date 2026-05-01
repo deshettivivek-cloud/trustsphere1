@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import logo from "../assets/logo.jpg";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { supabase } from "../lib/supabase";
@@ -70,26 +71,28 @@ const Navbar = () => {
         if (key.startsWith("sb-")) localStorage.removeItem(key);
       });
     } finally {
-      navigate("/login");
+      navigate("/get-started");
       window.location.reload();
     }
   };
 
   const isActive = (path) => location.pathname === path;
 
+  const isWorker = profile?.role === "service_worker";
+  const dashboardPath = isWorker ? "/dashboard/worker" : "/dashboard/customer";
+
   const NAV_LINKS = [
     { to: "/", label: "Home", icon: Home },
     { to: "/services", label: "Services", icon: Layers },
     { to: "/search", label: "Search", icon: Search },
     ...(user
-      ? [{ to: "/dashboard", label: "Dashboard", icon: LayoutDashboard }]
+      ? [{ to: dashboardPath, label: "Dashboard", icon: LayoutDashboard }]
       : []),
   ];
 
   const displayName = profile?.full_name || user?.email || "Account";
   const userInitial = displayName.charAt(0).toUpperCase();
   const userEmail = user?.email || "";
-  const isWorker = profile?.role === "service_worker";
   const roleBadgeText = isWorker ? "Service Worker" : "Customer";
   const roleBadgeClass = isWorker
     ? "bg-green-500/20 text-green-400"
@@ -113,12 +116,8 @@ const Navbar = () => {
               id="navbar-logo"
               className="flex items-center gap-2.5 group"
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-shadow duration-300">
-                <Shield size={16} className="text-white" />
-              </div>
-              <span className="text-lg font-bold text-white tracking-tight">
-                InLocFix
-              </span>
+              <img src={logo} alt="InLocFix" className="h-9 w-auto object-contain rounded-lg" />
+
             </Link>
 
             {/* Desktop Nav Links */}
@@ -239,7 +238,7 @@ const Navbar = () => {
                       </div>
 
                       <Link
-                        to="/dashboard"
+                        to={dashboardPath}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
                         <LayoutDashboard size={15} />
@@ -263,7 +262,7 @@ const Navbar = () => {
                 /* Guest auth buttons */
                 <>
                   <Link
-                    to="/login"
+                    to="/get-started"
                     id="navbar-login-btn"
                     className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-300 hover:text-white rounded-lg hover:bg-white/5 transition-all duration-200"
                   >
@@ -271,7 +270,7 @@ const Navbar = () => {
                     Login
                   </Link>
                   <Link
-                    to="/register"
+                    to="/get-started"
                     id="navbar-register-btn"
                     className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg hover:from-green-400 hover:to-emerald-500 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 transition-all duration-300"
                   >
@@ -344,14 +343,14 @@ const Navbar = () => {
               ) : (
                 <div className="flex gap-3">
                   <Link
-                    to="/login"
+                    to="/get-started"
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-slate-300 border border-white/10 rounded-xl hover:bg-white/5 transition-colors"
                   >
                     <LogIn size={16} />
                     Login
                   </Link>
                   <Link
-                    to="/register"
+                    to="/get-started"
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl shadow-lg shadow-green-500/20 transition-colors"
                   >
                     <UserPlus size={16} />

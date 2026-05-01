@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Shield, Globe, MessageCircle, Mail } from "lucide-react";
+import { Globe, MessageCircle, Mail } from "lucide-react";
+import logo from "../assets/logo.jpg";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -12,12 +13,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-2">
             <Link to="/" className="flex items-center gap-2.5 mb-4 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/20">
-                <Shield size={16} className="text-white" />
-              </div>
-              <span className="text-lg font-bold text-white tracking-tight">
-                InLocFix
-              </span>
+              <img src={logo} alt="InLocFix" className="h-10 w-auto object-contain rounded-lg" />
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
               Connecting you with verified, trusted local service professionals.
